@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Home Page{% endblock %}
+{% block content %}
+    <h1>Latest Registrations</h1>
+    
+    {% for table in tables %}
+        {{ table|safe }}
+    {% endfor %}
+
+    <p class="callout">
+        Check data in 
+        <a href="{{sheet_url}}">{{sheet_url}}</a> spreadsheet.
+        
+    </p>
+
+    <h3>What's next?</h3>
+    <ul>
+        TODOs
+    </ul>
+
+{% endblock %}

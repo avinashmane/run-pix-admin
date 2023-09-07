@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Certificates Page{% endblock %}
+{% block content %}
+    <h1 class="text-xl">Certificates</h1>
+    {% for cert in certificates %}
+        <h2>{{ table|safe }}</h2>
+
+        {% for key in certificates[cert] %}
+            {% if key=="inputs" %}
+            {{key}}
+                <!-- {{ certificates[cert]["inputs"]}} -->
+                    
+                <form action="/cert?cert={{cert}}"  method="post">
+                  
+                    {% for input in certificates[cert]["inputs"] %}
+                        {{input_value}}
+                        <div>
+                            <label>{{ input }}</label>
+                            <input type="text" id="{{input}}" name="{{input}}" value="{{certificates[cert]["param_testvals"][input]}}"/>
+                        </div>
+                    {% endfor %}
+                    <input type="submit" value="Submit">
+                </form>
+            {% else %}
+                <li><label> {{ key }}</label> : {{certificates[cert][key]}} 
+                    {% if key=="id" %}
+                    <a href="/cert?cert={{cert}}">Test</a>
+                    {% endif %}
+                </li> 
+            {% endif %}
+        {% endfor %} 
+
+    {% endfor %} 
+
+
+    <h3>What's next?</h3>
+    <ul>
+        TODOs:
+        <li>auto test</li>
+    </ul>
+
+{% endblock %}

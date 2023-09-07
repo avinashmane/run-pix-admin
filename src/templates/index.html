@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Home Page{% endblock %}
+{% block content %}
+<h2>Menu</h2>
+<p>Client email: {{client_email}}</p>
+<ol>
+    <li><a href="/townscriptsync">Townscript Sync</a>  {{user}} {{event}}</li>
+
+</ol>
+<h3>APIs</h3>
+<ol>
+    <li><a href="/api/v1/health_check">Health Check</a></li>
+
+</ol>
+
+{% endblock %}

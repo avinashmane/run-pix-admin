@@ -1,0 +1,30 @@
+certificates:
+  run_dist: 
+    id: 1Ll9huU9ezInrmqGNP7HrG77io-Za5yYLQGd3YQLCo_0
+    desc: Running distance
+    param: name,milestone,date,image # check with to placeholders in the template
+    param_testvals: # mapped to placeholders in the template
+      name: Avinash
+      milestone: 1st 1000m
+      date: "2024-02-02"
+      logo_img_url: https://www.fnordware.com/superpng/straight.png
+  race_finisher: 
+    id: 1Ll9huU9ezInrmqGNP7HrG77io-Za5yYLQGd3YQLCo_0
+    desc: race_finisher
+    param: name,distnace,date,bib,time,image
+  race_volunteer: 
+    id: 1Ll9huU9ezInrmqGNP7HrG77io-Za5yYLQGd3YQLCo_0
+    desc: race_finisher
+    param: name,distnace,date,bib,time,image
+  old_template: 
+    id: 15v70Kgys59jNZbHI_-NgxkQtN3NJLpLTQ2_Yv4xrKo0
+
+api:
+  base: https://www.townscript.com/api
+apis:
+  /user/loginwithtownscript
+  /eventdata/get
+sheet:
+  url: https://docs.google.com/spreadsheets/d/1eWB8KQkfsx8TVib8m8RNlv1PZNgoBcUCBt02lMhAPYA/edit#gid=739860648
+  reg: DKD2023_reg
+  tickets: DKD2023_tkt
