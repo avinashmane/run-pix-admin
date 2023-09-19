@@ -4,16 +4,20 @@ A sample Hello World server.
 import os
 
 from flask import Flask, render_template
+from flask_cors import CORS
 import requests
 import yaml
 import pandas as pd
 import sys
 sys.path.insert(0,"./nb")
+from datetime import datetime
 from townscript import Townscript
 from misc import subDict_tkt, subDict_ans, update_tab
 import gspread
 import json
 import logging
+
+
 from dotenv import load_dotenv
 
 load_dotenv() 
@@ -33,6 +37,7 @@ sheet:
 
 # pylint: disable=C0103
 app = Flask(__name__)
+cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
 app.logger.setLevel(logging.ERROR)
 
 @app.route('/')
@@ -41,16 +46,16 @@ def hello():
     message = "It's running!"
 
     """Get Cloud Run environment variables."""
-    service = os.environ.get('K_SERVICE', 'Unknown service')
+    user = os.environ.get('TOWNSCRIPT_USER', 'Unknown')
     revision = os.environ.get('K_REVISION', 'Unknown revision')
     app.logger.info('%s logger', message)
     print(message)
 
     return render_template('index.html',
         message=message,
-        client_email=service_account["client_email"],
+        client_email=service_account["client_email"] + f"/Revision:{revision}",
         event=event_name,
-        user=os.environ['TOWNSCRIPT_USER'])
+        user=user)
 
 @app.route('/townscriptsync')
 def townscriptSync():
@@ -112,6 +117,9 @@ def townscriptSync():
         tables=[df_showTkt.to_html(classes='data', index=False, header="true")]
     )
 
+@app.route("/api/v1/health_check")
+def health_check():
+  return {"now": datetime.now().isoformat()}
 
 if __name__ == '__main__':
     server_port = os.environ.get('PORT', '8080')
