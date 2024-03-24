@@ -1,14 +1,22 @@
 # Cloud Run Run Pix admin
 
-# purpose
+* What
+* How to use
+* How to install
+* Design
+
+# What
+## purpose
 * Alternate interface for admin activities
 * Easy migration from python notebooks and sync services as APO
 
 
 ## Features
 
-* Townscript - by cloud schedulder
+* certificate generator
+* makefile
 * CORS for APIs, health check api
+* Townscript - by cloud schedulder
 
 ### WIP
 
@@ -30,6 +38,14 @@
 * Allow authenticated only
 
 ---
+# How
+
+# certificates
+
+## post call with call template id and parameters
+
+
+# IGNORE
 ### Ref
 "Hello World" is a [Cloud Run](https://cloud.google.com/run/docs) application that renders a simple webpage.
 
