@@ -2,6 +2,9 @@
 A python Flask for runpix admin
 """
 import os
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
+
 
 from flask import Flask, render_template, request, Response
 from flask_cors import CORS
@@ -34,10 +37,10 @@ config_file = os.environ.get('CONFIG_FILE',"config.yaml")
 with open(config_file,"r") as f:
       cfg=yaml.safe_load(f)
 
-print(f"Start version 24Mar-1 with {SERVICE_ACCOUNT['client_email']}")
+logging.info(f"Start version 24Mar-2 with {SERVICE_ACCOUNT['client_email']}")
 # print(SERVICE_ACCOUNT)
 
-gapi = GAPI(SERVICE_ACCOUNT)
+gapi.set_cred(SERVICE_ACCOUNT)
 cms.cms = cms.CMSClass(SERVICE_ACCOUNT)
 
 # pylint: disable=C0103
@@ -54,7 +57,7 @@ def hello():
     user = os.environ.get('TOWNSCRIPT_USER', 'Unknown')
     revision = os.environ.get('K_REVISION', 'Unknown revision')
     app.logger.info('%s logger', message)
-    print(message)
+    logging.debug(message)
 
     return render_template('index.html',
         message=message,
@@ -86,7 +89,7 @@ def townscriptSync():
     skipcols_=['answerList','ticketAndDiscountList']
     cols_=[c for c in df_reg.columns
     if not (('custom' in c) or ( c in skipcols_))]
-    print(cols_)
+    logging.debug(cols_)
     df_reg=df_reg[cols_]
 
     "tickets"
@@ -136,9 +139,9 @@ def listCert():
       placeholders=Template(cfg['certificates'][cert]['id'],
                    doNotCopy=True).getPlaceHolders()
       cfg['certificates'][cert]['inputs']=placeholders
-      print(cfg['certificates'][cert])
+      logging.debug(cfg['certificates'][cert])
       cfg['certificates']=add_param_testvals(cfg['certificates'],cert)
-      print('>>>>>',cfg['certificates'][cert])
+      logging.debug('>>>>>',cfg['certificates'][cert])
       
     return render_template('cert.html',
                            certificates=cfg['certificates'] )
@@ -152,13 +155,13 @@ def getCert(cert):
         id=cfg['certificates'][cert]['id']
     else:
         id=cert
-    print(id,cert,values)
+    logging.debug(id,cert,values)
 
     try:
         x= Template(id).render(values=values).getThumbnail()
         return x
     except Exception as e:
-        print(f"Error getCert(): {e!r}")
+        logging.error(f"Error getCert(): {e!r}")
         return Response(f"Error {e!r}",400)
 
 @app.route('/cms')
@@ -187,6 +190,19 @@ def add_param_testvals(d,cert):
         if not x in d[cert]['param_testvals']:
            d[cert]['param_testvals'][x]="" 
     return d
+
+def setup_logging():
+    # Imports the Cloud Logging client library
+    import google.cloud.logging
+
+    # Instantiates a client
+    client = google.cloud.logging.Client()
+
+    # Retrieves a Cloud Logging handler based on the environment
+    # you're running in and integrates the handler with the
+    # Python logging module. By default this captures all logs
+    # at INFO level and higher
+    client.setup_logging()
 
 if __name__ == '__main__':
     server_port = os.environ.get('PORT', '8080')

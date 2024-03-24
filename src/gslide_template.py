@@ -16,7 +16,7 @@ from google.oauth2 import service_account
 from google.auth.transport.requests import Request
 import json
 from dotenv import load_dotenv
-# import py_ from pydash
+import logging
 import re
 global SERVICE_ACCOUNT
 
@@ -29,18 +29,18 @@ if DEBUG:
 gapi=None
 
 class GAPI:
-    def __init__(self,SERVICE_ACCOUNT):
+    def __init__(self):
         # If modifying these scopes, delete the file token.pickle.
         self.DRIVE_SCOPES = ['https://www.googleapis.com/auth/drive', 'https://www.googleapis.com/auth/documents']
         self.creds = None
         self.drive_service = None
         self.docs_service = None
+    def set_cred(self,SERVICE_ACCOUNT):
         self.creds = service_account.Credentials.from_service_account_info(SERVICE_ACCOUNT,\
         # from_service_account_file(SERVICE_ACCOUNT_FILE, 
                 scopes=self.DRIVE_SCOPES)
-
         if self.creds == None:
-            print('ERROR : Service credentials unavailable!')
+            logging.error('ERROR : Service credentials unavailable. define SERVICE_ACCOUNT environment variable')
             sys.exit()
 
         # Start drive and docs services.
@@ -62,27 +62,9 @@ class GAPI:
     def deleteFile(self,id):
         return self.drive_service.files().delete(fileId=id).execute()     
                   
-
+gapi =GAPI()
 
 class DrvDocument:
-
-    @staticmethod
-    def getList(gapi=gapi):
-        list=gapi.drive_service.files().list().execute()['files']
-        return [{fld:fil[fld] for fld in 'id name'.split()} for fil in list]
-
-    @staticmethod
-    def copyDocument(id,copy_title=None,gapi=gapi):
-        # Duplicate the template presentation using the Drive API.
-        if not copy_title: copy_title = str(date.today())
-        body = {"name": copy_title}
-        drive_response = (
-            gapi.drive_service.files()
-            .copy(fileId=id, body=body)
-            .execute()
-        )
-        return drive_response.get("id")
-
 
     def __init__(self,id,gapi=gapi):
         self.drive_service=gapi.drive_service
@@ -120,6 +102,22 @@ class DrvDocument:
             'role': permission,
         }).execute()
         
+    @staticmethod
+    def getList(gapi=gapi):
+        list=gapi.drive_service.files().list().execute()['files']
+        return [{fld:fil[fld] for fld in 'id name'.split()} for fil in list]
+
+    @staticmethod
+    def copyDocument(id,copy_title=None,gapi=gapi):
+        # Duplicate the template presentation using the Drive API.
+        if not copy_title: copy_title = str(date.today())
+        body = {"name": copy_title}
+        drive_response = (
+            gapi.drive_service.files()
+            .copy(fileId=id, body=body)
+            .execute()
+        )
+        return drive_response.get("id")
 
 class Template(DrvDocument):
     substitutePat = re.compile(r"\{([A-z_\-\ ]+)\}")
@@ -132,7 +130,7 @@ class Template(DrvDocument):
             self.id=self.copyDocument(id, 
                                     name if name else f'temporary copy {str(date.today())}')
             
-            print(f'Copying {id} to {self.id}')
+            logging.debug(f'Copied {id} to {self.id}')
             DrvDocument(self.id).givePermission("writer","avinashmane@gmail.com")            
 
         super().__init__(self.id)
@@ -209,9 +207,9 @@ class Template(DrvDocument):
             if param in values:
                 body["requests"].append(getReplacement(param,values[param]) )
             else:
-                print(f"parameter {param} not found")
+                logging.warn(f"parameter {param} not found")
 
-        print("placeholders> ",placeholders,json.dumps(body))
+        logging.debug("placeholders> ",placeholders,json.dumps(body))
         
         response = (
             gapi.slides_service.presentations()
@@ -220,7 +218,7 @@ class Template(DrvDocument):
         )
 
         
-        print(self.checkBatchUpdate(response)) 
+        self.checkBatchUpdate(response)
         return self 
 
     def export(self,mimeType='application/pdf'):
@@ -251,7 +249,7 @@ class Template(DrvDocument):
             # print(x,stat,replType,chgs)
             stat[replType] = stat.get(replType,0)+chgs
             num_replacements+=chgs
-        print(f"Replaced {num_replacements} text instances {stat} in {response['presentationId']}")
+        logging.debug(f"Replaced {num_replacements} text instances {stat} in {response['presentationId']}")
 
 
 

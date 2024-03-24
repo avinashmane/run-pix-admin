@@ -13,13 +13,18 @@ dev:
 debug:
 	cd src;\
 	pwd;\
-	flask run --debug --cert=../auth/cert.pem --key=../auth/key.pem -p 8080
+	flask run --debug -p 8080 \
+	# --cert=../auth/cert.pem --key=../auth/key.pem 
 
 tem:
 	python template.py
 
 build:
 	docker build . -t ${IMAGE_NAME}
+
+run_cmd:
+	gcloud config set run/region us-central1
+	
 
 run:
 	# docker run -it -t ${IMAGE_NAME} --env-file ./.env 
