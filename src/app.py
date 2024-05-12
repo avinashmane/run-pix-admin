@@ -5,6 +5,7 @@ import os
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
+from concurrent.futures import ThreadPoolExecutor
 
 from flask import Flask, render_template, request, Response
 from flask_cors import CORS
@@ -21,12 +22,13 @@ import sys
 sys.path.insert(0,"./nb")
 from datetime import datetime
 from townscript import Townscript
-from misc import subDict_tkt, subDict_ans, update_tab
+from misc import subDict_tkt, subDict_ans, update_tab, timeit
 import gspread
 import json
 import logging
 from gslide_template import gapi,GAPI, Template, DrvDocument
 import cms
+ts = lambda :datetime.now()
 
 from dotenv import load_dotenv
 
@@ -42,11 +44,15 @@ logging.info(f"Start version 24Mar-2 with {SERVICE_ACCOUNT['client_email']}")
 
 gapi.set_cred(SERVICE_ACCOUNT)
 cms.cms = cms.CMSClass(SERVICE_ACCOUNT)
-
 # pylint: disable=C0103
-app = Flask(__name__)
-cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
-app.logger.setLevel(logging.ERROR)
+def create_app(config_filename=None):
+    app = Flask(__name__)
+    cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
+    app.logger.setLevel(logging.ERROR)
+    return app
+
+app=create_app()
+
 
 @app.route('/')
 def hello():
@@ -127,7 +133,10 @@ def townscriptSync():
 
 @app.route("/api/v1/health_check")
 def health_check():
-  return {"now": datetime.now().isoformat()}
+  return {
+      "now": datetime.now().isoformat(),
+      "version":cfg['version']
+      }
 
 @app.get('/cert')
 def listCert():
@@ -136,7 +145,7 @@ def listCert():
       if len(cert)<20:
           cert=cfg['certificates'][cert]['id']
 
-      placeholders=Template(cfg['certificates'][cert]['id'],
+      placeholders=Template(cert,
                    doNotCopy=True).getPlaceHolders()
       cfg['certificates'][cert]['inputs']=placeholders
       logging.debug(cfg['certificates'][cert])
@@ -147,6 +156,7 @@ def listCert():
                            certificates=cfg['certificates'] )
 
 @app.post('/api/cert/<cert>')
+@timeit
 def getCert(cert):
     #cert = request.args.get('cert')
     values = request.get_json()  # data is empty
@@ -158,8 +168,19 @@ def getCert(cert):
     logging.debug(id,cert,values)
 
     try:
-        x= Template(id).render(values=values).getThumbnail()
-        return x
+        certTemplate = Template(id)
+        with ThreadPoolExecutor(max_workers=5) as executor:
+            permisionFuture = executor.submit(DrvDocument(certTemplate.id).givePermission, "writer","avinashmane@gmail.com")
+            renderFuture = executor.submit(certTemplate.render,values=values )
+            # print(ts(),">>>>5")
+            renderedTemplate = renderFuture.result()
+            # print(ts(),">> 6",certTemplate,renderedTemplate) 
+            # DrvDocument(self.id).givePermission("writer","avinashmane@gmail.com")            
+
+            x= renderedTemplate.getThumbnail()
+                
+            # x= Template(id).render(values=values).getThumbnail()
+            return x
     except Exception as e:
         logging.error(f"Error getCert(): {e!r}")
         return Response(f"Error {e!r}",400)
@@ -205,6 +226,7 @@ def setup_logging():
     client.setup_logging()
 
 if __name__ == '__main__':
+
     server_port = os.environ.get('PORT', '8080')
     app.run(port=server_port,  \
             host='0.0.0.0', \

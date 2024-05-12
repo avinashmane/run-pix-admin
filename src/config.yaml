@@ -1,5 +1,6 @@
+version: 1.1.2
 certificates:
-  run_dist: 
+  1Ll9huU9ezInrmqGNP7HrG77io-Za5yYLQGd3YQLCo_0: 
     id: 1Ll9huU9ezInrmqGNP7HrG77io-Za5yYLQGd3YQLCo_0
     desc: Running distance
     param: name,milestone,date,image # check with to placeholders in the template

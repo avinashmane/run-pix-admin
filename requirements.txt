@@ -1,4 +1,5 @@
 Flask==2.3.3
+flask[async]==2.3.3
 Flask-Cors==4.0.0
 requests==2.31.0
 debugpy # Required for debugging.
@@ -15,3 +16,5 @@ firebase_admin
 #townscript
 pandas  #for townscript
 gspread
+
+pytest

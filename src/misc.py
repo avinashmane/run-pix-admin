@@ -1,6 +1,7 @@
 import pandas as pd
 import gspread
 
+
 skipcols=['ticketAndDiscountList','answerList']
 
 def update_tab(gs,df_reg):
@@ -72,3 +73,20 @@ def subDict_tkt(dat,subdict,keys):
           # print(i,x['registrationId'],k)
       a_.append(t)
   return a_
+
+from datetime import datetime
+import os
+def ts(): return datetime.now() #.strftime("%Y-%m-%d %H:%M:%S")
+
+def timeit(func):
+    def wrapper(*args, **kwargs):
+        timeit_env=os.environ['TIMEIT'] if 'TIMEIT' in os.environ else ''
+        
+        if timeit_env != '': 
+          start=ts()
+          if timeit_env != 'END': print(f"{start} Starting {func.__name__} function...")
+        result = func(*args, **kwargs)
+        if timeit_env != '': 
+          print(f"{ts()} Finished {func.__name__} function in {ts() - start} seconds\n")
+        return result
+    return wrapper

@@ -3,11 +3,11 @@ SERVICE_NAME=run-pix-admin
 IMAGE_NAME=gcr.io/run-pix/run-pix-admin
 $(eval export $(shell sed -ne 's/ *#.*$$//; /./ s/=.*$$// p' .env))
 
-
 dev:
+	export MODE=DEV;\
 	cd src;\
 	pwd;\
-	export SSL_DISABLE=True & \
+	export SSL_DISABLE=True MODE=DEV& \
 	flask run -p 8080
 
 debug:
@@ -15,10 +15,13 @@ debug:
 	pwd;\
 	flask run --debug -p 8080 \
 	# --cert=../auth/cert.pem --key=../auth/key.pem 
-
-tem:
-	python template.py
-
+test:
+	# cd test;\
+	export MODE=DEV; pytest -rA -v
+perf:
+	python -m cProfile --o tests/_temp/cProfile.pstats -m pytest -rA;\
+	cd tests/_temp;\
+	python read_perf.py
 build:
 	docker build . -t ${IMAGE_NAME}
 
@@ -50,8 +53,8 @@ deploy:
 	@echo gcloud auth login --no-launch-browser
 	
 	gcloud run deploy ${SERVICE_NAME} --image ${IMAGE_NAME} \
-        --cpu=0.5 \
-        --max-instances=10 --memory=256M\
+        --cpu=1 \
+        --max-instances=10 --memory=512M\
         --min-instances=0\
         --env-vars-file=./.env.yaml \
         --allow-unauthenticated \

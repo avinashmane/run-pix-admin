@@ -11,6 +11,7 @@ import random
 import uuid
 from datetime import date
 from googleapiclient.discovery import build
+from misc import timeit
 # from google_auth_oauthlib.flow import InstalledAppFlow
 from google.oauth2 import service_account
 from google.auth.transport.requests import Request
@@ -65,7 +66,7 @@ class GAPI:
 gapi =GAPI()
 
 class DrvDocument:
-
+    @timeit
     def __init__(self,id,gapi=gapi):
         self.drive_service=gapi.drive_service
         attrs=self.drive_service.files().get(fileId=id).execute()
@@ -91,7 +92,8 @@ class DrvDocument:
             'role': 'writer',
             'withLink': True
         }).execute()
-    
+
+    @timeit
     def givePermission(self,permission="writer",email="avinashmane@gmail.com"):
     
         self.drive_service.permissions().create(
@@ -108,6 +110,7 @@ class DrvDocument:
         return [{fld:fil[fld] for fld in 'id name'.split()} for fil in list]
 
     @staticmethod
+    @timeit
     def copyDocument(id,copy_title=None,gapi=gapi):
         # Duplicate the template presentation using the Drive API.
         if not copy_title: copy_title = str(date.today())
@@ -124,6 +127,7 @@ class Template(DrvDocument):
     slideId=0  #slide number to be used for exporting jpeg/ currently for replacement too
 
     def __init__(self,id,name=None,doNotCopy=False):
+        super().__init__(id)
         if doNotCopy:
             self.id=id
         else:
@@ -131,9 +135,7 @@ class Template(DrvDocument):
                                     name if name else f'temporary copy {str(date.today())}')
             
             logging.debug(f'Copied {id} to {self.id}')
-            DrvDocument(self.id).givePermission("writer","avinashmane@gmail.com")            
 
-        super().__init__(self.id)
         
         
     def test(self):
@@ -159,16 +161,20 @@ class Template(DrvDocument):
             if ('shape' in el):
                 shp=el['shape']
                 #print(el['objectId'],shp['shapeType'],shp)
-                for t in shp['text']['textElements']:
-                    if 'textRun' in t:
-                        placeholders=self.substitutePat.findall(t['textRun']['content'])
-                        #if ~len(placeholders):print(el['objectId'],shp['shapeType'],t['textRun']['content'])
-                        ret+=placeholders
-                    else:
-                        #print(el['objectId'],shp['shapeType'],t)
-                        pass
+                try:
+                    for t in shp['text']['textElements']:
+                        if 'textRun' in t:
+                            placeholders=self.substitutePat.findall(t['textRun']['content'])
+                            #if ~len(placeholders):print(el['objectId'],shp['shapeType'],t['textRun']['content'])
+                            ret+=placeholders
+                        else:
+                            #print(el['objectId'],shp['shapeType'],t)
+                            pass
+                except:
+                    pass
         return ret
 
+    @timeit
     def render(self,
                     values,
                     deleteElementsWithNoValues=True
