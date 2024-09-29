@@ -8,9 +8,16 @@ dev:
 	cd src;\
 	pwd;\
 	export SSL_DISABLE=True MODE=DEV& \
+	fastapi dev app.py  --port 8080 --host 0.0.0.0
+
+flask_dev:
+	export MODE=DEV;\
+	cd src;\
+	pwd;\
+	SSL_DISABLE=True MODE=DEV FLASK_APP=app_flask.py:app \
 	flask run -p 8080
 
-debug:
+flask_debug:
 	cd src;\
 	pwd;\
 	flask run --debug -p 8080 \
@@ -22,19 +29,18 @@ perf:
 	python -m cProfile --o tests/_temp/cProfile.pstats -m pytest -rA;\
 	cd tests/_temp;\
 	python read_perf.py
-build:
+d-build:
 	docker build . -t ${IMAGE_NAME}
 
 run_cmd:
 	gcloud config set run/region us-central1
-	
 
-run:
+d-run:
 	# docker run -it -t ${IMAGE_NAME} --env-file ./.env 
-	docker run -p 8080:8080 --env-file ./.env -t ${IMAGE_NAME}
+	docker run -p 8080:8080 --env-file ./.env.docker -e PORT=8080 -t ${IMAGE_NAME}
 	#--env SERVICE_ACCOUNT='${SERVICE_ACCOUNT}'
 
-push:
+d-push:
 	docker push ${IMAGE_NAME}:latest
 
 tbuild:
@@ -48,7 +54,7 @@ tbuild:
 		--region=us-central1
 tclean:
 	gcloud run deploy delete ${SERVICE_NAME}-test
-deploy:
+d-deploy:
 	#to be written #
 	@echo gcloud auth login --no-launch-browser
 	

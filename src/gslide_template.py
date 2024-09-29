@@ -93,6 +93,9 @@ class DrvDocument:
             'withLink': True
         }).execute()
 
+    async def givePermissionAsync(self,permission="writer",email="avinashmane@gmail.com"):
+    
+        return self.givePermission(permission="writer",email="avinashmane@gmail.com")
     @timeit
     def givePermission(self,permission="writer",email="avinashmane@gmail.com"):
     

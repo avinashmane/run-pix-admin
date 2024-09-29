@@ -20,6 +20,7 @@
 
 ### WIP
 
+* fastAPI
 * Python forms
     * Pydrive
     * pydocuments

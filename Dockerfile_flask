@@ -1,8 +1,6 @@
 # Python image to use.
 FROM python:3.11-alpine
-ARG type=flask
 
-ENV APP_ROOT="."
 # ENV SERVICE_ACCOUNT='{"serviceaccount":"replacewithfilecontent"}'
 
 # Set the working directory to /app
@@ -18,7 +16,4 @@ RUN pip install --trusted-host pypi.python.org -r requirements.txt
 COPY src .
 
 # Run app.py when the container launches
-# ENTRYPOINT ["python", "app.py"]
-#
-# CMD ["fastapi", "run", "app.py", ]
-CMD ["uvicorn", "app:app","--host", "0.0.0.0","--port", "8080"]
+ENTRYPOINT ["python", "app.py"]
