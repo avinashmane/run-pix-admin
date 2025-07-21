@@ -90,3 +90,19 @@ def timeit(func):
           print(f"{ts()} Finished {func.__name__} function in {ts() - start} seconds\n")
         return result
     return wrapper
+
+def lst(x,sep=None):
+  """
+  makes into list
+
+  lst("symbol shortName quoteType exchange marketCap forwardPE trailingPE marketCap ")
+
+  >>> ['symbol', 'shortName', 'quoteType', 'exchange', 'marketCap', 'forwardPE', 'trailingPE', 'marketCap']
+  """
+  if isinstance(x,str):
+    if sep==None:
+      return x.split()
+    else:
+      return x.split(sep)
+  else:
+    return x

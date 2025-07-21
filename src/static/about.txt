@@ -1,0 +1,6 @@
+This favicon was generated using the following font:
+
+- Font Title: Anton SC
+- Font Author: undefined
+- Font Source: https://fonts.gstatic.com/s/antonsc/v1/4UaBrEBBsgltGn71sxLmzanB44N1.ttf
+- Font License: undefined)

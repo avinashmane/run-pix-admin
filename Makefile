@@ -1,34 +1,26 @@
 include .env
 SERVICE_NAME=run-pix-admin
-IMAGE_NAME=gcr.io/run-pix/run-pix-admin
+IMAGE_NAME=us-central1-docker.pkg.dev/run-pix/runpix/run-pix-admin
+# gcr.io/run-pix/run-pix-admin
 $(eval export $(shell sed -ne 's/ *#.*$$//; /./ s/=.*$$// p' .env))
 
-dev:
+dev: 
+	conda activate $(VENV);\
 	export MODE=DEV;\
 	cd src;\
 	pwd;\
 	export SSL_DISABLE=True MODE=DEV& \
 	fastapi dev app.py  --port 8080 --host 0.0.0.0
 
-flask_dev:
-	export MODE=DEV;\
-	cd src;\
-	pwd;\
-	SSL_DISABLE=True MODE=DEV FLASK_APP=app_flask.py:app \
-	flask run -p 8080
-
-flask_debug:
-	cd src;\
-	pwd;\
-	flask run --debug -p 8080 \
-	# --cert=../auth/cert.pem --key=../auth/key.pem 
 test:
 	# cd test;\
 	export MODE=DEV; pytest -rA -v
+
 perf:
 	python -m cProfile --o tests/_temp/cProfile.pstats -m pytest -rA;\
 	cd tests/_temp;\
 	python read_perf.py
+
 d-build:
 	docker build . -t ${IMAGE_NAME}
 
@@ -44,7 +36,7 @@ d-push:
 	docker push ${IMAGE_NAME}:latest
 
 tbuild:
-	gcloud run deploy ${SERVICE_NAME}-test --source . \
+	gcloud run deploy ${SERVICE_NAME} --source . \
         --cpu=1 \
         --max-instances=10 --memory=256M\
         --min-instances=0\
@@ -68,10 +60,31 @@ d-deploy:
 		--region=us-central1
 	#--service-account 1008690560612-compute@developer.gserviceaccount.com \
         
-          
 
 check_env:
 	set 
 
 cors:
 	gsutil cors set cors.json gs://indiathon.appspot.com
+
+install: 
+	@echo installing
+	pip install -r requirements.txt
+
+
+#############################33
+# old
+
+
+flask_dev:
+	export MODE=DEV;\
+	cd src;\
+	pwd;\
+	SSL_DISABLE=True MODE=DEV FLASK_APP=app_flask.py:app \
+	flask run -p 8080
+
+flask_debug:
+	cd src;\
+	pwd;\
+	flask run --debug -p 8080 \
+	# --cert=../auth/cert.pem --key=../auth/key.pem 

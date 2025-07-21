@@ -17,10 +17,12 @@ import uvicorn
 from typing import Any, Dict, Annotated
 from pydantic import BaseModel
 from fastapi import FastAPI, HTTPException, Body, Header,Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from jinja2 import Undefined, Environment, FileSystemLoader, select_autoescape
+
+import yahoofinance as yfin
 
 from dotenv import load_dotenv
 load_dotenv() 
@@ -102,6 +104,8 @@ def hello():
         client_email=SERVICE_ACCOUNT["client_email"] + f"/Revision:{revision}",
         event=event_name,
         user=user)
+
+app.mount("/static", StaticFiles(directory="./static", html=True), name="frontend")
 
 # @app.route('/townscriptsync')
 @app.get('/townscriptsync')
@@ -230,7 +234,8 @@ async def create_item(cert: str, body: Annotated[Dict,Body()], ):
                 return x
     except Exception as e:
         logging.error(f"Error getCert(): {e!r}")
-        return Response(f"Error {e!r}",400)
+        # return Response(f"Error {e!r}",400)
+        raise HTTPException(status_code=400, detail=f"Error getCert(): {e!r}")
     return item
 
 
@@ -263,7 +268,7 @@ def getCert(payload: Dict[Any, Any], x_token: Annotated[str, Header()], cert: st
                 return x
     except Exception as e:
         logging.error(f"Error getCert(): {e!r}")
-        return Response(f"Error {e!r}",400)
+        raise HTTPException(status_code=400, detail=f"Error getCert(): {e!r}")
 
 
 class CommonHeaders(BaseModel):
@@ -313,6 +318,14 @@ async def handle_post(event: str,request: Request,
       "body":await request.json()
       }    
 
+@app.get('/yfinance',response_class= HTMLResponse)
+def yf_home():
+    return jinja.get_template('yfinance.html').render(
+                           certificates=cfg['certificates'] )
+    
+@app.get('/yfinance/{ticker}/info',response_class= JSONResponse)
+async def yf_home(ticker: str):
+    return yfin.Ticker(ticker).info
 
 # @app.route('/cms')
 @app.get('/cms',response_class= HTMLResponse)
@@ -329,6 +342,8 @@ def getCmsColl(collection: str,site: str | None = None):
     mixAndMatch(**request.args)
     data = cms.cms.get(collection,**request.args)
     return (data)
+
+
 
 import time
 @app.get("/ping")

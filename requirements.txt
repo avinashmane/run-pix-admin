@@ -20,3 +20,4 @@ pandas  #for townscript
 gspread
 
 pytest
+yfinance
