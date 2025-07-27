@@ -20,9 +20,9 @@ from fastapi import FastAPI, HTTPException, Body, Header,Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from jinja2 import Undefined, Environment, FileSystemLoader, select_autoescape
-
-import yahoofinance as yfin
+from jinja_template import jinja 
+import yahoofinance
+yahoofinance.set_template_env(jinja)
 
 from dotenv import load_dotenv
 load_dotenv() 
@@ -45,17 +45,8 @@ import gspread
 from gslide_template import gapi,GAPI, Template, DrvDocument
 import cms
 
-jinja = Environment(
-    loader=FileSystemLoader(f"{APP_ROOT}/templates"),
-    autoescape=select_autoescape()
-)
 
-class SilentUndefined(Undefined):
-    def _fail_with_undefined_error(self, *args, **kwargs):
-        return ''
-    
 ts = lambda :datetime.now()
-
 
 logging.info(f"Start version 24Mar-2 with {SERVICE_ACCOUNT['client_email']}")
 # print(SERVICE_ACCOUNT)
@@ -63,11 +54,6 @@ logging.info(f"Start version 24Mar-2 with {SERVICE_ACCOUNT['client_email']}")
 gapi.set_cred(SERVICE_ACCOUNT)
 cms.cms = cms.CMSClass(SERVICE_ACCOUNT)
 
-# def create_app(config_filename=None):
-#     app = Flask(__name__)
-#     cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
-#     app.logger.setLevel(logging.ERROR)
-#     return app
 
 def create_fast_api():
     app = FastAPI() 
@@ -87,7 +73,7 @@ pass
 
 app = create_fast_api()
 
-# @app.route('/')
+
 @app.get('/',response_class= HTMLResponse)
 def hello():
     """Return a friendly HTTP greeting."""
@@ -106,68 +92,6 @@ def hello():
         user=user)
 
 app.mount("/static", StaticFiles(directory="./static", html=True), name="frontend")
-
-# @app.route('/townscriptsync')
-@app.get('/townscriptsync')
-def townscriptSync():
-    """Return a friendly HTTP greeting."""
-    message = f"Date: {pd.Timestamp.now()}"
-
-    """Get Cloud Run environment variables."""
-
-    # print(event)
-    TS=Townscript(cfg)
-    TS.TSToken()
-    event=TS.getEvents(event_name)
-    
-    dat=TS.getData(event_name)
-
-    
-    "reformat answers"
-    df_ans=pd.DataFrame(
-                    subDict_ans(dat,
-                    subdict='answerList',
-                    keys=['uniqueOrderId']))
-    df_reg=pd.DataFrame(dat).merge(df_ans,how='outer',on='uniqueOrderId')
-    skipcols_=['answerList','ticketAndDiscountList']
-    cols_=[c for c in df_reg.columns
-    if not (('custom' in c) or ( c in skipcols_))]
-    logging.debug(cols_)
-    df_reg=df_reg[cols_]
-
-    "tickets"
-    df_tkt=pd.DataFrame(subDict_tkt(dat,
-                     subdict='ticketAndDiscountList',
-                     keys=['registrationId','uniqueOrderId','userEmailId',
-                           'userName','Contact Number','Gender','T Shirt option',
-                           'T-shirt size','BIB , T Shirt Collection Location',
-                           "Name on the T Shirt( type Blank if you don't want to print anything)","registrationTimestamp"]))
-
-    " Move the downloaded file to ~/.config/gspread/service_account.json. Windows users should put this file to %APPDATA%/gspread/service_account.json. "
-    gc = gspread.service_account_from_dict(SERVICE_ACCOUNT)
-    gs=gc.open_by_url(cfg['sheet']['url'])
-    gs_reg=gs.worksheet('DKD2023_reg')
-    gs_tkt=gs.worksheet('DKD2023_tkt')
-    " update"
-    update_tab(gs_reg,df_reg)
-    update_tab(gs_tkt,df_tkt)
-
-    "show last few registrations"
-    # print('df_reg',df_reg.shape,'Tickets',df_tkt.shape)
-    showColumns="registrationTimestamp registrationId uniqueOrderId userName ".split()
-    
-    df_showReg=df_reg.sort_values('registrationId',ascending=False).head(20)[showColumns]
-    "show last few tickets"
-    showColumns="registrationTimestamp registrationId uniqueOrderId userName ticketName ticketPrice".split()
-    df_showTkt=df_tkt[showColumns].sort_values('registrationId',ascending=False).head(30)
-    
-    return jinja.get_template('townscriptsync.html').render(
-    # return render_template('townscriptsync.html',
-        message=message,
-        sheet_url=cfg['sheet']['url'],
-        event=event,
-        tables=[df_showTkt.to_html(classes='data', index=False, header="true")]
-    )
 
 # @app.route("/api/v1/health_check")
 @app.get("/api/v1/health_check")
@@ -318,15 +242,9 @@ async def handle_post(event: str,request: Request,
       "body":await request.json()
       }    
 
-@app.get('/yfinance',response_class= HTMLResponse)
-def yf_home():
-    return jinja.get_template('yfinance.html').render(
-                           certificates=cfg['certificates'] )
-    
-@app.get('/yfinance/{ticker}/info',response_class= JSONResponse)
-async def yf_home(ticker: str):
-    return yfin.Ticker(ticker).info
-
+#
+#    CMS not working
+#
 # @app.route('/cms')
 @app.get('/cms',response_class= HTMLResponse)
 def getCms():
@@ -343,6 +261,67 @@ def getCmsColl(collection: str,site: str | None = None):
     data = cms.cms.get(collection,**request.args)
     return (data)
 
+@app.get('/townscriptsync')
+def townscriptSync():
+    """Return a friendly HTTP greeting."""
+    message = f"Date: {pd.Timestamp.now()}"
+
+    """Get Cloud Run environment variables."""
+
+    # print(event)
+    TS=Townscript(cfg)
+    TS.TSToken()
+    event=TS.getEvents(event_name)
+    
+    dat=TS.getData(event_name)
+
+    
+    "reformat answers"
+    df_ans=pd.DataFrame(
+                    subDict_ans(dat,
+                    subdict='answerList',
+                    keys=['uniqueOrderId']))
+    df_reg=pd.DataFrame(dat).merge(df_ans,how='outer',on='uniqueOrderId')
+    skipcols_=['answerList','ticketAndDiscountList']
+    cols_=[c for c in df_reg.columns
+    if not (('custom' in c) or ( c in skipcols_))]
+    logging.debug(cols_)
+    df_reg=df_reg[cols_]
+
+    "tickets"
+    df_tkt=pd.DataFrame(subDict_tkt(dat,
+                     subdict='ticketAndDiscountList',
+                     keys=['registrationId','uniqueOrderId','userEmailId',
+                           'userName','Contact Number','Gender','T Shirt option',
+                           'T-shirt size','BIB , T Shirt Collection Location',
+                           "Name on the T Shirt( type Blank if you don't want to print anything)","registrationTimestamp"]))
+
+    " Move the downloaded file to ~/.config/gspread/service_account.json. Windows users should put this file to %APPDATA%/gspread/service_account.json. "
+    gc = gspread.service_account_from_dict(SERVICE_ACCOUNT)
+    gs=gc.open_by_url(cfg['sheet']['url'])
+    gs_reg=gs.worksheet('DKD2023_reg')
+    gs_tkt=gs.worksheet('DKD2023_tkt')
+    " update"
+    update_tab(gs_reg,df_reg)
+    update_tab(gs_tkt,df_tkt)
+
+    "show last few registrations"
+    # print('df_reg',df_reg.shape,'Tickets',df_tkt.shape)
+    showColumns="registrationTimestamp registrationId uniqueOrderId userName ".split()
+    
+    df_showReg=df_reg.sort_values('registrationId',ascending=False).head(20)[showColumns]
+    "show last few tickets"
+    showColumns="registrationTimestamp registrationId uniqueOrderId userName ticketName ticketPrice".split()
+    df_showTkt=df_tkt[showColumns].sort_values('registrationId',ascending=False).head(30)
+    
+    return jinja.get_template('townscriptsync.html').render(
+    # return render_template('townscriptsync.html',
+        message=message,
+        sheet_url=cfg['sheet']['url'],
+        event=event,
+        tables=[df_showTkt.to_html(classes='data', index=False, header="true")]
+    )
+
 
 
 import time
@@ -352,6 +331,12 @@ async def ping(): #request: Request
         time.sleep(5)
         print("Goodbye")
         return { "PING": "PONG!" }
+
+
+app.mount('/yfinance',yahoofinance.app)
+
+
+
 
 def mixAndMatch(*args, **kwargs):
     print(f' Args: {args}' )
