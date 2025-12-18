@@ -5,15 +5,22 @@ IMAGE_NAME=us-central1-docker.pkg.dev/run-pix/runpix/run-pix-admin
 $(eval export $(shell sed -ne 's/ *#.*$$//; /./ s/=.*$$// p' .env))
 
 dev: 
-	conda activate $(VENV);\
+	. .venv/bin/activate ;\
 	export MODE=DEV;\
-	cd src;\
+	pwd;\
+	export SSL_DISABLE=True MODE=DEV& \
+	fastapi dev src/app.py  --port 8080 --host 0.0.0.0
+old_dev:
+	#conda activate $(VENV);\
+	export MODE=DEV;\
+# 	cd src;\
 	pwd;\
 	export SSL_DISABLE=True MODE=DEV& \
 	fastapi dev app.py  --port 8080 --host 0.0.0.0
 
+
 test:
-	# cd test;\
+	. .venv/bin/activate ;\
 	export MODE=DEV; pytest -rA -v
 
 perf:
@@ -34,6 +41,9 @@ d-run:
 
 d-push:
 	docker push ${IMAGE_NAME}:latest
+
+d-clean:
+	docker prune ${IMAGE_NAME}
 
 tbuild:
 	gcloud run deploy ${SERVICE_NAME} --source . \
@@ -73,18 +83,17 @@ install:
 
 
 #############################33
-# old
+# outdated
 
+# flask_dev:
+# 	export MODE=DEV;\
+# 	cd src;\
+# 	pwd;\
+# 	SSL_DISABLE=True MODE=DEV FLASK_APP=app_flask.py:app \
+# 	flask run -p 8080
 
-flask_dev:
-	export MODE=DEV;\
-	cd src;\
-	pwd;\
-	SSL_DISABLE=True MODE=DEV FLASK_APP=app_flask.py:app \
-	flask run -p 8080
-
-flask_debug:
-	cd src;\
-	pwd;\
-	flask run --debug -p 8080 \
-	# --cert=../auth/cert.pem --key=../auth/key.pem 
+# flask_debug:
+# 	cd src;\
+# 	pwd;\
+# 	flask run --debug -p 8080 \
+# 	# --cert=../auth/cert.pem --key=../auth/key.pem 

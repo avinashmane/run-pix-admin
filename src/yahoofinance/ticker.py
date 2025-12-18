@@ -1,19 +1,17 @@
 import yfinance as yf
 from misc import lst
 
-class Tickers(yf.Ticker):
+class Tickers(yf.Tickers):
   def __init__(self,**kw):
-    self.symbol=symbol
+    # print(kw)
     super().__init__(**kw)
-    # self.data=yf.Ticker(symbol)
-
+    
 
 class Ticker(yf.Ticker):
   key_first=lst("symbol shortName")
   def __init__(self,symbol):
     self.symbol=symbol
     super().__init__(symbol)
-    # self.data=yf.Ticker(symbol)
 
   "Yahoo finance logic"
   def get_data(ticker):
@@ -23,7 +21,8 @@ class Ticker(yf.Ticker):
   def __repr__(self):
     # return str(self.data.info)
     return "<Ticker: {symbol} {shortName}>".format(**self.info)
-  def news(self):
+
+  def news_html(self):
     for x in self.news:
         # print(x)
         try: tn=sort_by(x["content"]["thumbnail"]["resolutions"],"width")[0]["url"]

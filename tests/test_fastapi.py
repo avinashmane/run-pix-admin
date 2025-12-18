@@ -9,7 +9,7 @@ CONFIG_FILE: ./src/config.yaml
 """).items():
     os.environ [k] = str(v)
 
-print(os.getcwd())
+print("current directory", os.getcwd())
 # from app import create_app
 # import app as flaskapp
 
@@ -40,7 +40,6 @@ def app():
 @pytest.fixture()
 def client(app):
     return TestClient(app)
-
 
 @pytest.fixture()
 def runner(app):

@@ -1,18 +1,34 @@
 {% extends "base.html" %}
 {% block title %}Yahoo Finance Page{% endblock %}
 {% block content %}
+<div class="m-2">
     <h1 class="text-xl">Yahoo Finance API</h1>
 
-<h3>What's next?</h3>
-<ul>
-    <li>Info: <a href="/yfinance/AAPL/info/">AAPL</a></li>
-    <li>Options: <a href="/yfinance/AAPL/options">Dates</a></li>
+    <h3>What's next?</h3>
+    <ul>
+        <b>Ticker</b>
+        <li>Info: <a href="/yfinance/AAPL/info/">AAPL info</a></li>
+        <li>Options: <a href="/yfinance/AAPL/options">AAPL Options/Dates</a></li>
+        <li>Options with expiry: <a href="/yfinance/AAPL/options/2026-12-18">AAPL Options with expiry 2026-12-18</a></li>
+        
+        <li>Analysts: <a href="/yfinance/AAPL/analysts">analyst_price_targets</a></li>
+        <li>Upgrades: <a href="/yfinance/AAPL/upgrades_downgrades">upgrades_downgrades</a></li>
+        <li>institutional_holders: <a href="/yfinance/AAPL/institutional_holders">institutional_holders</a></li>
+        
+
+    </ul>
+    <ul>
+        <b>Tickers list</b>
+        <li>News: <a href="/yfinance/AAPL,MSFT/news">news</a></li>
+        <li>History: <a href="/yfinance/AAPL/history">http://localhost:8080/yfinance/AAPL/history?price_type=Close&start=2025-01-01</a></li>
+
+    </ul>    
+    <li>Docs: <a href="/yfinance/docs">Test</a></li>
     
     TODOs:
     <li>test: <a href="/yfinance/l/">Login</a></li>
     <li>Login: <a href="/yfinance/login/">Login</a></li>
-    
-    <li>Yahoo Finance APIs</li>
-</ul>
 
+    <li>Yahoo Finance APIs</li>
+</div>
 {% endblock %}

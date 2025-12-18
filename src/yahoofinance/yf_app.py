@@ -7,7 +7,9 @@ from starlette.middleware.sessions import SessionMiddleware
 from starlette.requests import Request
 from authlib.integrations.starlette_client import OAuth
 from starlette.config import Config
-from .ticker import Ticker
+from .ticker import Ticker, Tickers
+from typing import Dict, Any, Optional 
+from datetime import date, datetime
 from authlib.integrations.requests_client import OAuth2Session
 # import sys
 # sys.path.insert(0,"../..")
@@ -44,7 +46,6 @@ def get_oauth():
 oauth=None
 
 app=get_app()
-
 
 
 @app.get('/',response_class= HTMLResponse)
@@ -90,7 +91,6 @@ async def auth(request: Request):
     request.session['user'] = dict(user)
     return RedirectResponse(url='/')
 
-
 @app.get('/logout')
 async def logout(request):
     request.session.pop('user', None)
@@ -100,12 +100,24 @@ async def logout(request):
 async def yf_home(ticker: str):
     return Ticker(ticker).info
 
+"https://ranaroussi.github.io/yfinance/reference/api/yfinance.Tickers.html#yfinance.Tickers"
+"price_type : Close             Dividends            High                    Low                   Open             Stock Splits         Volume        "
+@app.get('/{tickers}/history', response_class= JSONResponse)
+async def yf_history(tickers: str, price_type: str= "Close",
+                period: str='1mo', interval: str='1d', start: date = None, end: date = None): 
+    data = Tickers(tickers=tickers).history(period, interval, start, end )
+    data.index=data.index.astype(str)
+    history= data[price_type] if price_type else data
+    # print(history )
+    return history.to_dict()  
+
 @app.get('/{ticker}/options',response_class= JSONResponse)
-async def yf_home(ticker: str):
+async def yf_option(ticker: str):
+    print(ticker)
     return Ticker(ticker).options
 
 @app.get('/{ticker}/options/{yyyymmdd}',response_class= JSONResponse)
-async def yf_home(ticker: str, yyyymmdd: str):
+async def yf_option_date(ticker: str, yyyymmdd: str):
     t = Ticker(ticker)
     options=a=t.option_chain(yyyymmdd)
     ret={}
@@ -115,4 +127,22 @@ async def yf_home(ticker: str, yyyymmdd: str):
         ret[ty]=df.apply(lambda row:row.to_json(),axis=1)
     return ret
 
+@app.get('/{ticker}/upgrades_downgrades',response_class= JSONResponse)
+async def yf_upgrades_downgrades(ticker: str):
+    return Ticker(ticker).upgrades_downgrades.T.to_dict()
 
+@app.get('/{ticker}/institutional_holders',response_class= JSONResponse)
+async def yf_institutional_holders(ticker: str):
+    return Ticker(ticker).institutional_holders.T.to_dict()
+
+@app.get('/{ticker}/analysts',response_class= JSONResponse)
+async def yf_analysts(ticker: str):
+    return Ticker(ticker).analyst_price_targets    
+
+
+# Multiple tickers
+@app.get('/{tickers}/news',response_class= JSONResponse)
+async def yf_news(tickers: str):
+    news = Tickers(tickers=tickers).news()
+    # print(news)
+    return news

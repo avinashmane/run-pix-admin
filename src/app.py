@@ -90,8 +90,8 @@ def hello():
         client_email=SERVICE_ACCOUNT["client_email"] + f"/Revision:{revision}",
         event=event_name,
         user=user)
-
-app.mount("/static", StaticFiles(directory="./static", html=True), name="frontend")
+APP_ROOT=os.getenv("APP_ROOT","src")
+app.mount("/static", StaticFiles(directory=f"{APP_ROOT}/static", html=True), name="frontend")
 
 # @app.route("/api/v1/health_check")
 @app.get("/api/v1/health_check")
@@ -359,7 +359,4 @@ if __name__ == '__main__':
     #         host='0.0.0.0', \
     #         #ssl_context=('cert.pem', 'key.pem')\
     #         )
-    logger.debug('this is a debug message')
-
-    
     uvicorn.run(app, host="0.0.0.0", port=int(server_port))
