@@ -5,7 +5,7 @@ import os, yaml,json
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 import logging
-import requests
+# import requests
 import pandas as pd
 import sys
 # from cloudevents.http import from_http
@@ -21,13 +21,15 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from jinja_template import jinja 
+from markdown import markdown
 import yahoofinance
 yahoofinance.set_template_env(jinja)
+from coach import mount_coach
 
 from dotenv import load_dotenv
 load_dotenv() 
 APP_ROOT=os.environ.get('APP_ROOT', ".") # root for templates and config
-event_name = os.environ.get('EVENT' ,'DKD2023')   
+event_name = os.environ.get('EVENT' ,'DKD2026')   
 SERVICE_ACCOUNT = json.loads(os.environ['SERVICE_ACCOUNT']) 
 config_file = os.environ.get('CONFIG_FILE',f"{APP_ROOT}/config.yaml") 
 
@@ -45,7 +47,6 @@ import gspread
 from gslide_template import gapi,GAPI, Template, DrvDocument
 import cms
 
-
 ts = lambda :datetime.now()
 
 logging.info(f"Start version 24Mar-2 with {SERVICE_ACCOUNT['client_email']}")
@@ -57,15 +58,16 @@ cms.cms = cms.CMSClass(SERVICE_ACCOUNT)
 
 def create_fast_api():
     app = FastAPI() 
+    origins=json.loads(os.environ.get("ALLOW_ORIGINS",'["https://os.agno.com","http://os.agno.com", "https://js-agent.newrelic.com/"]'))
     app.add_middleware(
         CORSMiddleware,
-        # allow_origins=['*'],#origins,
+        allow_origins=origins,#origins,
         allow_origin_regex='.*',
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
     )
-    logging.info('****************** Starting Server *****************') 
+    logging.info('****************** Starting Server *****************',origins) 
     # app.mount(f"{APP_ROOT}/static", StaticFiles(directory="static"), name="static")
     return app
 
@@ -73,12 +75,11 @@ pass
 
 app = create_fast_api()
 
-
 @app.get('/',response_class= HTMLResponse)
-def hello():
+def hello(request: Request):
     """Return a friendly HTTP greeting."""
     message = "It's running!"
-
+    print(request)
     """Get Cloud Run environment variables."""
     user = os.environ.get('TOWNSCRIPT_USER', 'Unknown')
     revision = os.environ.get('K_REVISION', 'Unknown revision')
@@ -91,9 +92,20 @@ def hello():
         event=event_name,
         user=user)
 APP_ROOT=os.getenv("APP_ROOT","src")
+
 app.mount("/static", StaticFiles(directory=f"{APP_ROOT}/static", html=True), name="frontend")
 
-# @app.route("/api/v1/health_check")
+
+@app.get("/page/{page}", response_class=HTMLResponse)
+async def render_markdown(page):
+    print(page, os.getcwd())
+    with open(f"{APP_ROOT}/pages/{page}.md", "r", encoding="utf-8") as input_file:
+        text = input_file.read()
+    # content=markdown_to_html(f"{APP_ROOT}/pages/{page}.md")
+    return jinja.get_template("page.html").render({
+        "text": markdown(text) 
+    })
+
 @app.get("/api/v1/health_check")
 def health_check():
   return {
@@ -121,7 +133,6 @@ def listCert(cert: str | None = None, ):
 
 class Item(BaseModel): 
     Dict | None
-
 
 
 @app.post("/api/cert/{cert}")
@@ -201,6 +212,8 @@ class CommonHeaders(BaseModel):
     if_modified_since: str | None = None
     traceparent: str | None = None
     x_tag: list[str] = []
+
+
 
 @app.post('/api/event_debug/{event}')
 async def handle_post(event: str,request: Request,
@@ -323,7 +336,6 @@ def townscriptSync():
     )
 
 
-
 import time
 @app.get("/ping")
 async def ping(): #request: Request
@@ -332,12 +344,14 @@ async def ping(): #request: Request
         print("Goodbye")
         return { "PING": "PONG!" }
 
-
+# Mount yfinance
 app.mount('/yfinance',yahoofinance.app)
 
+# Mount AI agent 
+app.mount('/agent', mount_coach())
 
 
-
+###############################################3333
 def mixAndMatch(*args, **kwargs):
     print(f' Args: {args}' )
     print(f' Kwargs: {kwargs}' )

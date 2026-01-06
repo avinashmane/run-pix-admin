@@ -80,7 +80,7 @@ def ts(): return datetime.now() #.strftime("%Y-%m-%d %H:%M:%S")
 
 def timeit(func):
     def wrapper(*args, **kwargs):
-        timeit_env=os.environ['TIMEIT'] if 'TIMEIT' in os.environ else ''
+        timeit_env=os.environ.get('TIMEIT','')
         
         if timeit_env != '': 
           start=ts()

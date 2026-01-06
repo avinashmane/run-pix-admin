@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+    <h1>{{ title }}</h1>
+    <!-- The 'text' variable will be the raw HTML string from markdown conversion -->
+    <div>{{ text | safe }}</div> 
+{% endblock %}

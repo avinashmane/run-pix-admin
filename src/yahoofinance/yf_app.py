@@ -105,10 +105,17 @@ async def yf_home(ticker: str):
 @app.get('/{tickers}/history', response_class= JSONResponse)
 async def yf_history(tickers: str, price_type: str= "Close",
                 period: str='1mo', interval: str='1d', start: date = None, end: date = None): 
-    data = Tickers(tickers=tickers).history(period, interval, start, end )
+    data=None
+    try:
+        data = Tickers(tickers=tickers).history(period, interval, start, end , repair=True)
+        data_nonna = data.apply(lambda col: col.hasnans, axis=0)
+        data=data.loc[:,~data_nonna]
+    except e as Exception:
+        print("Error yf_history: ",e)
+
     data.index=data.index.astype(str)
     history= data[price_type] if price_type else data
-    # print(history )
+    print(history )
     return history.to_dict()  
 
 @app.get('/{ticker}/options',response_class= JSONResponse)

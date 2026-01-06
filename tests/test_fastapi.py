@@ -16,7 +16,7 @@ print("current directory", os.getcwd())
 from fastapi.testclient import TestClient
 from starlette.requests import Request
 
-import app_fastapi as fastapi
+import app as fastapi
 
 from misc import timeit
 
