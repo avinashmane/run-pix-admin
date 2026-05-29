@@ -20,6 +20,8 @@ dependencies = [
     "itsdangerous>=2.2.0",
     "markdown>=3.10",
     "mcp>=1.25.0",
+    "ollama>=0.6.2",
+    "openai>=2.38.0",
     "pandas>=2.3.3",
     "pydash>=8.0.5",
     "pytest>=9.0.2",
@@ -30,4 +32,9 @@ dependencies = [
     "sqlalchemy>=2.0.45",
     "uvicorn>=0.38.0",
     "yfinance>=0.2.66",
+]
+
+[dependency-groups]
+dev = [
+    "pytest-watcher>=0.6.3",
 ]

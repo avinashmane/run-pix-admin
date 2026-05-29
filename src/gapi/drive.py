@@ -2,14 +2,15 @@
 """Drive API wrapper: GAPI class
 """
 from __future__ import print_function
-import os
+import os, io
 import sys
 import json
 import logging
 from googleapiclient.discovery import build
 from google.oauth2 import service_account
 from misc import timeit
-
+from googleapiclient.http import MediaIoBaseDownload
+from googleapiclient.errors import HttpError
 
 class GAPI:
     def __init__(self):
@@ -42,7 +43,7 @@ class GAPI:
         self.slides_service = build('slides', 'v1', credentials=self.creds)
         return self
 
-    def listFiles(self, directory=None, name_mask=None, mimeType=None, owner=None, pageSize=100, **kw):
+    def listFiles(self, directory=None, name_mask=None, mimeType=None, owner=None, supportsAllDrives=True, pageSize=100, **kw):
         """List files in Drive with optional directory, filename mask and owner filters.
 
         Parameters:
@@ -92,13 +93,14 @@ class GAPI:
                     pageSize=pageSize,
                     fields="nextPageToken, files(id, name, mimeType, parents)",
                     pageToken=page_token,
+                    supportsAllDrives=supportsAllDrives ,
                     **kw,
                 ).execute()
                 files.extend(resp.get('files', []))
                 page_token = resp.get('nextPageToken')
                 if not page_token:
                     break
-        except Exception:
+        except Exception as e:
             # Fall back to a simple list() call for maximum compatibility if something goes wrong
             try:
                 resp = self.drive_service.files().list().execute()
@@ -117,6 +119,44 @@ class GAPI:
             print(f'File ID: {file_obj['id']} {file_obj['name']} deleted successfully.')
         except Exception as e:
             print(f'An error occurred: {e}')
+
+    def get_content(self,file_obj,mimetype='text/plain', encoding='utf-8'):
+        print('name {}, id {} {}'.format(file_obj.get('name'), file_obj['id'],file_obj['mimeType']))
+        try:
+            content = self.docs_service.get(documentId=file_obj.get('id)').GetContentString(mimetype=mimetype))
+            return content.decode(encoding=encoding)
+        except Exception as e:
+            print("Error: ", file_obj, e)
+
+    def export(self,file_obj,mimeType='text/plain', encoding='utf-8'):
+        """Download a Document file in PDF format.
+        Args:
+            real_file_id : file ID of any workspace document format file
+        Returns : IO object with location
+        """
+        try:
+            # create drive api client
+            service = self.drive_service
+
+            file_id = file_obj.get('id')
+
+            # pylint: disable=maybe-no-member
+            request = service.files().export_media(
+                fileId=file_id, mimeType=mimeType
+            )
+            content= request.execute()
+            return content.decode(encoding=encoding)
+            # file = io.BytesIO()
+            # downloader = MediaIoBaseDownload(file, request)
+            # done = False
+            # while done is False:
+            #     status, done = downloader.next_chunk()
+            #     print(f"Download {int(status.progress() * 100)}.")
+
+        except HttpError as error:
+            print(f"An error occurred: {error}")
+            file = None
+        # return file.getvalue()
 
     def getMetadata(self, id, **kw):
         return self.drive_service.files().get(fileId=id, **kw).execute()

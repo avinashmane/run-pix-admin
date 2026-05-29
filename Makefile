@@ -3,25 +3,29 @@ SERVICE_NAME=run-pix-admin
 IMAGE_NAME=us-central1-docker.pkg.dev/run-pix/runpix/run-pix-admin
 # gcr.io/run-pix/run-pix-admin
 $(eval export $(shell sed -ne 's/ *#.*$$//; /./ s/=.*$$// p' .env))
+TEST_PATTERN="content"
+TEST_FILE="tests/test_gapi.py"
+VENV=. .venv/bin/activate && pwd &&
+DEV=MODE=DEV SSL_DISABLE=True
+	
 
 dev: 
-	. .venv/bin/activate ;\
-	export MODE=DEV;\
-	pwd;\
-	export SSL_DISABLE=True MODE=DEV& \
-	fastapi dev src/app.py  --port 8080 --host 0.0.0.0
+	$(DEV) $(VENV) uv run fastapi dev src/app.py  --port 8080 --host 0.0.0.0
+
 old_dev:
-	#conda activate $(VENV);\
-	export MODE=DEV;\
-# 	cd src;\
-	pwd;\
-	export SSL_DISABLE=True MODE=DEV& \
-	fastapi dev app.py  --port 8080 --host 0.0.0.0
+	$(DEV) $(VENV) fastapi dev app.py  --port 8080 --host 0.0.0.0
 
 
 test:
-	. .venv/bin/activate ;\
-	export MODE=DEV; pytest -rA -v
+	$(DEV) $(VENV)  pytest -rA -v
+
+test-watch:
+	$(DEV) $(VENV)  uv run ptw --patterns "content" .
+
+
+test1:
+	$(DEV) $(VENV)  pytest -rA -v $(TEST_FILE) -k $(TEST_PATTERN)
+
 
 perf:
 	python -m cProfile --o tests/_temp/cProfile.pstats -m pytest -rA;\
@@ -56,6 +60,7 @@ tbuild:
 		--region=us-central1
 tclean:
 	gcloud run deploy delete ${SERVICE_NAME}-test
+	
 d-deploy:
 	#to be written #
 	@echo gcloud auth login --no-launch-browser
@@ -81,19 +86,4 @@ install:
 	@echo installing
 	pip install -r requirements.txt
 
-
-#############################33
-# outdated
-
-# flask_dev:
-# 	export MODE=DEV;\
-# 	cd src;\
-# 	pwd;\
-# 	SSL_DISABLE=True MODE=DEV FLASK_APP=app_flask.py:app \
-# 	flask run -p 8080
-
-# flask_debug:
-# 	cd src;\
-# 	pwd;\
-# 	flask run --debug -p 8080 \
-# 	# --cert=../auth/cert.pem --key=../auth/key.pem 
+.PHONY: deploy dev check_env install

@@ -34,7 +34,7 @@ def test_listfiles():
     printFiles(files)
     assert len(files)>0
 
-# @pytest.mark.skip(reason="This test is inactive")
+@pytest.mark.skip(reason="This test is inactive")
 def test_listfiles_shared():
     files=gslide_template.gapi.listFiles(
                                          name_mask='*2019*',
@@ -43,13 +43,25 @@ def test_listfiles_shared():
     printFiles(files)
     assert len(files)>0
 
-# def test_readfiles_shared():
-#     files=gslide_template.gapi.listFiles(
-#                                          name_mask='*2019*',
-#                                          includeItemsFromAllDrives=True,
-#                                          )
-#     printFiles(files)
-#     assert len(files)>0
+def test_get_content_text():
+    import yaml
+    folder='1u4ja2Kb1AbfAcMHAc7J5VvW2I61DyP6p'
+    gapi=gslide_template.gapi
+    files=gapi.listFiles(
+                    directory=folder,
+                    name_mask='*.md',
+                    includeItemsFromAllDrives=True,
+                    )
+    for f in files:
+        parents=",".join(f['parents']) if 'parents' in f else ''
+        content = gapi.export(f,'text/markdown') 
+        try:
+            content = yaml.safe_load(content)
+        except Exception as e: 
+            print(f"Error parsing: {e!r}")
+        print(f"{f.get('name')}: {parents}:")
+        print( content )
+    assert len(files)>0
 
 @pytest.mark.skip(reason="This test is inactive")
 def test_listfiles_owner():
