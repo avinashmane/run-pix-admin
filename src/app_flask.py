@@ -35,7 +35,7 @@ from dotenv import load_dotenv
 load_dotenv() 
 
 event_name = os.environ.get('EVENT' ,'DKD2023')   
-SERVICE_ACCOUNT = json.loads(os.environ.get('SERVICE_ACCOUNT',{})) 
+SERVICE_ACCOUNT = json.loads(os.getenv('SERVICE_ACCOUNT',{})) 
 config_file = os.environ.get('CONFIG_FILE',"config.yaml") 
 
 logging.info(f"Start cwd: {os.getcwd()} with {SERVICE_ACCOUNT.get('client_email','default')}")

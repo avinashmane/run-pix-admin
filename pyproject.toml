@@ -23,6 +23,8 @@ dependencies = [
     "ollama>=0.6.2",
     "openai>=2.38.0",
     "pandas>=2.3.3",
+    "pinecone==5.4.2",
+    "pinecone-text>=0.11.0",
     "pydash>=8.0.5",
     "pytest>=9.0.2",
     "python-dotenv>=1.2.1",
@@ -37,4 +39,5 @@ dependencies = [
 [dependency-groups]
 dev = [
     "pytest-watcher>=0.6.3",
+    "snakeviz>=2.2.2",
 ]

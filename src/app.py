@@ -25,9 +25,11 @@ from markdown import markdown
 import yahoofinance
 yahoofinance.set_template_env(jinja)
 from coach import mount_coach
+from coach.lib import initialize_db
 
 from dotenv import load_dotenv
 load_dotenv() 
+
 APP_ROOT=os.environ.get('APP_ROOT', ".") # root for templates and config
 event_name = os.environ.get('EVENT' ,'DKD2026')   
 SERVICE_ACCOUNT = json.loads(os.environ['SERVICE_ACCOUNT']) 
@@ -41,11 +43,11 @@ with open(config_file,"r") as f:
       cfg=yaml.safe_load(f)
 
 sys.path.insert(0,"./nb")
+
 from townscript import Townscript
 from misc import subDict_tkt, subDict_ans, update_tab, timeit
 import gspread
 from gslide_template import gapi,GAPI, Template, DrvDocument
-import cms
 
 ts = lambda :datetime.now()
 
@@ -53,12 +55,12 @@ logging.info(f"Start version 24Mar-2 with {SERVICE_ACCOUNT['client_email']}")
 # print(SERVICE_ACCOUNT)
 
 gapi.set_cred(SERVICE_ACCOUNT)
-cms.cms = cms.CMSClass(SERVICE_ACCOUNT)
+
 
 
 def create_fast_api():
     app = FastAPI() 
-    origins=json.loads(os.environ.get("ALLOW_ORIGINS",'["https://os.agno.com","http://os.agno.com", "https://js-agent.newrelic.com/"]'))
+    origins=json.loads(os.getenv("ALLOW_ORIGINS",'["https://os.agno.com","http://os.agno.com", "https://js-agent.newrelic.com/"]'))
     app.add_middleware(
         CORSMiddleware,
         allow_origins=origins,#origins,
@@ -68,14 +70,24 @@ def create_fast_api():
         allow_headers=["*"],
     )
     logging.info('****************** Starting Server *****************',origins) 
-    # app.mount(f"{APP_ROOT}/static", StaticFiles(directory="static"), name="static")
+    # app.mount(f"{APP_ROOT}/static", StaticFiles(directory="src/lib/static"), name="static")
     return app
-
-pass
-
 app = create_fast_api()
 
+if os.getenv("CMS_PROJECT_ID")!=None:
+    # import cms
+    # cms.cms = cms.CMSClass(os.getenv("CMS_SERVICE_ACCOUNT"))
+    # app_cms = cms.router
+    # app.include_router(app_cms)
+    pass
+
 @app.get('/',response_class= HTMLResponse)
+async def root():
+    """Serve static index page."""
+    from fastapi.responses import FileResponse
+    return FileResponse(f"{APP_ROOT}/static/index.html")
+
+@app.get('/ui',response_class= HTMLResponse)
 def hello(request: Request):
     """Return a friendly HTTP greeting."""
     message = "It's running!"
@@ -91,6 +103,7 @@ def hello(request: Request):
         client_email=SERVICE_ACCOUNT["client_email"] + f"/Revision:{revision}",
         event=event_name,
         user=user)
+        
 APP_ROOT=os.getenv("APP_ROOT","src")
 
 app.mount("/static", StaticFiles(directory=f"{APP_ROOT}/static", html=True), name="frontend")
@@ -174,38 +187,6 @@ async def create_item(cert: str, body: Annotated[Dict,Body()], ):
     return item
 
 
-# @app.post('/api/cert/<cert>')
-@app.post('/api/old_cert/{cert}')
-@timeit
-def getCert(payload: Dict[Any, Any], x_token: Annotated[str, Header()], cert: str):
-    #cert = request.args.get('cert')
-    print(response)
-    values = request.get_json()  # data is empty
-    #values = request.form  # data is empty
-    if cert in cfg['certificates'] and "id" in cfg['certificates'][cert]:
-        id=cfg['certificates'][cert]['id']
-    else:
-        id=cert
-    logging.debug(id,cert,values)
-
-    try:
-            with ThreadPoolExecutor(max_workers=5) as executor:
-                permisionFuture = executor.submit(DrvDocument(certTemplate.id).givePermission, "writer","avinashmane@gmail.com")
-                renderFuture = executor.submit(certTemplate.render,values=values )
-                # print(ts(),">>>>5")
-                renderedTemplate = renderFuture.result()
-                # print(ts(),">> 6",certTemplate,renderedTemplate) 
-                # DrvDocument(self.id).givePermission("writer","avinashmane@gmail.com")            
-
-                x= renderedTemplate.getThumbnail()
-                    
-                # x= Template(id).render(values=values).getThumbnail()
-                return x
-    except Exception as e:
-        logging.error(f"Error getCert(): {e!r}")
-        raise HTTPException(status_code=400, detail=f"Error getCert(): {e!r}")
-
-
 class CommonHeaders(BaseModel):
     host: str
     save_data: bool
@@ -254,25 +235,6 @@ async def handle_post(event: str,request: Request,
       "now": datetime.now().isoformat(),
       "body":await request.json()
       }    
-
-#
-#    CMS not working
-#
-# @app.route('/cms')
-@app.get('/cms',response_class= HTMLResponse)
-def getCms():
-    # return Response('Work in progress',404)
-    raise HTTPException(status_code=404, detail="Item not found")
-
-# @app.route('/cms/<collection>')
-@app.get('/cms/{collection}',response_class= HTMLResponse)
-def getCmsColl(collection: str,site: str | None = None):
-    if not collection:
-        return "Please provide /collection?tag=x,y"
-    # site = request.args.get('site')
-    mixAndMatch(**request.args)
-    data = cms.cms.get(collection,**request.args)
-    return (data)
 
 @app.get('/townscriptsync')
 def townscriptSync():
@@ -348,13 +310,9 @@ async def ping(): #request: Request
 app.mount('/yfinance',yahoofinance.app)
 
 # Mount AI agent 
+
 app.mount('/agent', mount_coach())
 
-
-###############################################3333
-def mixAndMatch(*args, **kwargs):
-    print(f' Args: {args}' )
-    print(f' Kwargs: {kwargs}' )
 
 def add_param_testvals(d,cert):
     #cfg['certificates']

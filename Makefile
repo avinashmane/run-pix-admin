@@ -1,20 +1,26 @@
 include .env
 SERVICE_NAME=run-pix-admin
+
 IMAGE_NAME=us-central1-docker.pkg.dev/run-pix/runpix/run-pix-admin
 # gcr.io/run-pix/run-pix-admin
 $(eval export $(shell sed -ne 's/ *#.*$$//; /./ s/=.*$$// p' .env))
 TEST_PATTERN="content"
 TEST_FILE="tests/test_gapi.py"
 VENV=. .venv/bin/activate && pwd &&
-DEV=MODE=DEV SSL_DISABLE=True
-	
+DEV=SSL_DISABLE=True MODE_=DEV #dev disabled
+AGENT_UI=cd agent-ui && 
+# Deployment https://run-pix-admin-1008690560612.us-central1.run.app/
+# AgenOs https://run-pix-admin-1008690560612.us-central1.run.app/agent
 
 dev: 
-	$(DEV) $(VENV) uv run fastapi dev src/app.py  --port 8080 --host 0.0.0.0
+	$(DEV) $(VENV) uv run fastapi dev src/app.py --port 8080 --host 0.0.0.0
 
-old_dev:
-	$(DEV) $(VENV) fastapi dev app.py  --port 8080 --host 0.0.0.0
+_dev:
+	$(DEV) $(VENV) uv run src/app.py 
 
+profile:
+	$(DEV) $(VENV) uv run python -m cProfile -s cumulative -o performance_cprofile.txt src/app.py &&\
+	snakeviz performance.cprofile --listen 0.0.0.0:8081
 
 test:
 	$(DEV) $(VENV)  pytest -rA -v
@@ -47,7 +53,7 @@ d-push:
 	docker push ${IMAGE_NAME}:latest
 
 d-clean:
-	docker prune ${IMAGE_NAME}
+	docker image prune ${IMAGE_NAME}
 
 tbuild:
 	gcloud run deploy ${SERVICE_NAME} --source . \
@@ -86,4 +92,14 @@ install:
 	@echo installing
 	pip install -r requirements.txt
 
-.PHONY: deploy dev check_env install
+firestore_index:
+	gcloud firestore  indexes composite create --project=indiathon  \
+	--collection-group=test_vectors --query-scope=COLLECTION \
+	--field-config=vector-config='{"dimension":"1536","flat":"{}"}',field-path=embedding     
+
+## Agent ui
+ui:
+	$(AGENT_UI) pnpm dev
+
+
+.PHONY: deploy dev check_env install ui

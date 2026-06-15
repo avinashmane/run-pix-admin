@@ -4,8 +4,32 @@ import firebase_admin.firestore
 from google.cloud.firestore_v1.base_query import FieldFilter, Or
 import json
 import os
-from pydash import omit 
+from pydash import omit
 import urllib.parse
+from fastapi import APIRouter, HTTPException, Request
+from fastapi.responses import HTMLResponse
+
+router = APIRouter()
+cms: "CMSClass | None" = None
+
+def mixAndMatch(*args, **kwargs):
+    print(f' Args: {args}' )
+    print(f' Kwargs: {kwargs}' )
+
+@router.get('/cms', response_class=HTMLResponse)
+def getCms():
+    raise HTTPException(status_code=404, detail="Item not found")
+
+@router.get('/cms/{collection}', response_class=HTMLResponse)
+def getCmsColl(collection: str, request: Request, site: str | None = None):
+    if not collection:
+        return "Please provide /collection?tag=x,y"
+    if cms is None:
+        raise HTTPException(status_code=500, detail="CMS not initialized")
+    params = dict(request.query_params)
+    mixAndMatch(**params)
+    data = cms.get(collection, **params)
+    return data
 
 class CMSClass:
     def __init__(self,cms_cred,project_id=os.environ.get('CMS_PROJECT_ID',None) ):

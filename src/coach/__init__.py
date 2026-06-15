@@ -1,9 +1,7 @@
 from fastapi import FastAPI
-from agno.os import AgentOS
-from .lib import get_db
-from .lib import get_model
-from .agents import get_basic_agent
-from .studio import registry
+from .lib import initialize_db
+
+# Setup AgentOS with all configurations
 
 def mount_coach(app=None):
     """
@@ -19,18 +17,14 @@ def mount_coach(app=None):
     if app is None:
         app = FastAPI(title="API v1", description="Version 1 of the API")
 
-    # Setup the Firestore database
-    db = get_db()
+    # Initialize database before importing AgentOS/agents so registries are populated
+    initialize_db()
 
-    # Setup agents
-    basic_agent = get_basic_agent(db)
+    # Import after initialization to avoid creating agents before db/knowledge setup
+    from .agent_os import setup_agent_os
 
-    # Create AgentOS
-    agent_os = AgentOS(
-        agents=[basic_agent],
-        registry=registry,
-        base_app=app  # Your custom FastAPI app
-    )
+    # Setup AgentOS with all configurations
+    agent_os = setup_agent_os(app)
     
     return agent_os.get_app()
 

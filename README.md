@@ -4,6 +4,7 @@
 * How to use
 * How to install
 * Design
+* TODO
 
 # What
 ## purpose
@@ -13,14 +14,28 @@
 
 ## Features
 
+## General
 * certificate generator
 * makefile
 * CORS for APIs, health check api
 * Townscript - by cloud schedulder
-
-### WIP
-
 * fastAPI
+
+## Backlog
+
+### General
+* enable disable CMS
+* knowledge working in agentos
+### Coach
+
+* knowledge working with pinecone
+* build agents for - beginner, advanced, fitness, cross training, pcmcrunners philosophy
+* build a team for agents - not started
+* registry working for database - disable
+* firestore vectordb class WIP
+
+### GAPItemplate
+
 * Python forms
     * Pydrive
     * pydocuments
@@ -51,3 +66,7 @@ https://firm-swan-prompt.ngrok-free.app//yfinance/auth/
 
 
 {"error_code":0,"error_message":"","data":{"assertion_error_code":0,"data":{"json_data":{"riskDataRequired":false,"id":"595c8a87-5643-4a24-bb2f-1b883be2089e"}},"assertion_error_message":"","state":"pending","control_flow":[{"app_data":{"ClientName":"AviPortfolio","ProductType":"acctsandtrading"},"strings":{},"assertion_id":"SMrthdm2eBZ+y+u5Do1RiA2q","escapes":[],"type":"form","form_id":"CAGT&CConsentForm"}],"assertions_complete":false},"headers":[]}
+
+## TODO 
+
+

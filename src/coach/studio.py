@@ -2,8 +2,10 @@
 Registry configuration for Agno agents.
 """
 from agno.registry import Registry
-from .lib import get_db
+from .lib import dbs, get_model, get_pinecone_vector_db
 
+def add_tool(a,b):
+    return a+b
 
 def create_registry():
     """
@@ -12,11 +14,13 @@ def create_registry():
     Returns:
         Registry: Configured Registry instance
     """
-    db = get_db()
-    
+    db = dbs["firestore"]
+
     registry = Registry(  id="pcmcrunners",
-                                    models=get_model(),
-                                    dbs=[db])
+                            models=[get_model()],
+                            tools=[add_tool],
+                            vector_dbs=[get_pinecone_vector_db("test")],
+                            dbs=[db])
     
     return registry
 
