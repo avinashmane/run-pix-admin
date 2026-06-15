@@ -9,6 +9,9 @@ from misc import timeit
 import json
 
 class DrvDocument:
+    id=None
+    mimeType: str|None=None
+
     @timeit
     def __init__(self, id, gapi=None):
         # Avoid importing package-level gapi at import time to keep imports modular
