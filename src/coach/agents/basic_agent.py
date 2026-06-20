@@ -21,8 +21,8 @@ def get_basic_agent():
         knowledge=kb,
         tools=[ 
             WebsiteTools(), 
-            KnowledgeTools(kb),
-            DuckDuckGoTools()
+            KnowledgeTools(kb,),
+            # DuckDuckGoTools()
             ],
         add_history_to_context=True,
     )

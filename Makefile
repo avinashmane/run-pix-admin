@@ -101,5 +101,8 @@ firestore_index:
 ui:
 	$(AGENT_UI) pnpm dev
 
+## dev only Ollama
+ollama:
+	ollama run
 
 .PHONY: deploy dev check_env install ui

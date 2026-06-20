@@ -35,6 +35,7 @@ def setup_agent_os(app: FastAPI) -> AgentOS:
             knowledge= list(knowledge_bases.values()),
             a2a_interface=False,
             db=db,
+            # authorization=True,
             base_app=app  # Your custom FastAPI app
         )
         

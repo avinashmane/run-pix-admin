@@ -10,17 +10,11 @@ import json
 
 class DrvDocument:
     id=None
-    mimeType: str|None=None
-
+    mimeType: str|None=None 
     @timeit
     def __init__(self, id, gapi=None):
         # Avoid importing package-level gapi at import time to keep imports modular
-        if gapi is None:
-            try:
-                from . import gapi as _gapi
-                gapi = _gapi
-            except Exception:
-                raise RuntimeError('gapi not initialized; provide gapi instance')
+        if gapi is None: gapi = DrvDocument._get_gapi_instance()
 
         self.drive_service = gapi.drive_service
         attrs = self.drive_service.files().get(fileId=id).execute()
@@ -30,6 +24,14 @@ class DrvDocument:
     def __repr__(self):
         mimetype = self.mimeType.split('.')[-1]
         return "https://docs.google.com/{1}/d/{0}/edit".format(self.id, mimetype)
+
+    @staticmethod
+    def _get_gapi_instance():
+            try:
+                from . import gapi as gapi_instance
+                return gapi_instance
+            except Exception:
+                raise RuntimeError('gapi not initialized; provide gapi instance')
 
     def getPerm(self):
         # list permissions
@@ -71,6 +73,21 @@ class DrvDocument:
         files = gapi.listFiles(directory=directory, name_mask=name_mask, mimeType=mimeType, owner=owner)
         return [{fld: fil.get(fld) for fld in 'id name'.split()} for fil in files]
 
+    @staticmethod
+    def copyDocument(id,copy_title=None,gapi=None):
+        
+        if gapi is None: gapi = DrvDocument._get_gapi_instance()
+
+        # Duplicate the template presentation using the Drive API.
+
+        if not copy_title: copy_title = str(date.today())
+        body = {"name": copy_title}
+        drive_response = (
+            gapi.drive_service.files()
+            .copy(fileId=id, body=body)
+            .execute()
+        )
+        return drive_response.get("id")
 
 class Template(DrvDocument):
     substitutePat = re.compile(r"\{([A-z_\-\ ]+)\}")

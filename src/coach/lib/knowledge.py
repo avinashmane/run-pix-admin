@@ -1,4 +1,4 @@
-from agno.knowledge.embedder.google import GeminiEmbedder
+
 from agno.knowledge.knowledge  import Knowledge
 from agno.vectordb.pineconedb import PineconeDb
 import os
@@ -9,7 +9,7 @@ from coach.lib.db import get_firestore_client
 
 
 def get_pinecone_vector_db(name: str, 
-    embedder: GeminiEmbedder=GeminiEmbedder()
+    embedder=None
     ) -> PineconeDb:
     """
     Create and configure a Pinecone vector database.
@@ -23,6 +23,7 @@ def get_pinecone_vector_db(name: str,
     """
     api_key: str | None = os.getenv("PINECONE_API_KEY")
     index_name = name #"thai-recipe-hybrid-search"
+    embedder=embedder if embedder else get_embedder()
     # print("PINECONE_API_KEY: ",api_key)
     vector_db = PineconeDb(
         name= index_name,
@@ -37,9 +38,9 @@ def get_pinecone_vector_db(name: str,
     return vector_db
 
 
-def get_kb(name="knowledge-base",vectordb_type=None,contents_db=None):
+def get_kb(name="knowledge-base", vectordb_type=None, contents_db=None):
 
-    embedder = GeminiEmbedder()
+    embedder=get_embedder()
     if vectordb_type=="firestore":
 
         # Define your custom knowledge base
@@ -64,3 +65,17 @@ def get_kb(name="knowledge-base",vectordb_type=None,contents_db=None):
         )
 
     return knowledge_base
+
+def get_embedder(dimensions=1536    ):
+
+     EMBEDDER=os.getenv("AGNO_EMBEDDER","")
+
+     embedding_model="/".join(EMBEDDER.split("/")[1:]) if EMBEDDER else None
+     
+     if EMBEDDER.startswith("ollama"):
+        from agno.knowledge.embedder.ollama import OllamaEmbedder
+        return OllamaEmbedder(dimensions=dimensions,id=embedding_model)
+     else:
+        from agno.knowledge.embedder.google import GeminiEmbedder
+        return GeminiEmbedder(dimensions=dimensions,id=embedding_model)
+    
